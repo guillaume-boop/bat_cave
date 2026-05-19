@@ -21,6 +21,9 @@ app.post('/register', async (req, res) => {
   // Récupère les identifiants saisis par l'utilisateur
   const { username, password } = req.body
 
+  if (password.length < 8) return res.status(400).send('Le mot de passe doit contenir au moins 8 caractères.')
+  if (username !== username.trim()) return res.status(400).send('Le nom d utilisateur ne doit pas contenir d espaces')
+  
   // Hachage du mot de passe avant stockage !
   const hash = await bcrypt.hash(password, 10)
 
