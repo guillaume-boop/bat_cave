@@ -28,6 +28,3 @@ yarn-debug.log*
 dist/
 build/
 
-# Database
-*.db
-*.sqlite
