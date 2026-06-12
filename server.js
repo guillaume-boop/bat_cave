@@ -1,34 +1,35 @@
-// Import des librairies et de la BDD
 const express = require('express')
 const bcrypt = require('bcrypt')
+const path = require('path')
 const db = require('./db')
 
-// Créé du serveur Express
 const app = express()
-// Rend possible la lecture et l'écriture du JSON
+// Write and read json
 app.use(express.json())
-// Ouvre les fichiers frontend non protégés
+// Open static files
 app.use(express.static('public'))
-
-// Lance le serveur en local, sur le port 3000
+// Launch the serve
 const PORT = 3000
 app.listen(PORT, () => {
   console.log(`Serveur démarré sur http://localhost:${PORT}`)
 })
 
+// Default redirection
+app.get('/', (req, res) => {
+  res.redirect('/register.html')
+})
 
+// On POST /register
 app.post('/register', async (req, res) => {
-  // Récupère les identifiants saisis par l'utilisateur
   const { username, password } = req.body
-
+  // Guard
   if (password.length < 8) return res.status(400).send('Le mot de passe doit contenir au moins 8 caractères.')
   if (username !== username.trim()) return res.status(400).send('Le nom d utilisateur ne doit pas contenir d espaces')
   
-  // Hachage du mot de passe avant stockage !
   const hash = await bcrypt.hash(password, 10)
 
+  // try the insert
   try {
-    // Requête SQL pour insérer le nouvel utilisateur en base
     const insert = db.prepare(
       'INSERT INTO users (username, password_hash) VALUES (?, ?)'
     )
@@ -55,7 +56,7 @@ const checkAuth = async (req, res, next) => {
     .toString()
     .split(':')
 
-  // Vérification en BDD 
+  // Vérification en BDD
   const user = db
     .prepare('SELECT * FROM users WHERE username = ?')
     .get(username)
@@ -67,3 +68,42 @@ const checkAuth = async (req, res, next) => {
     return res.status(401).send('Identifiants invalides')
   }
 }
+
+// Routes protégées avec le middleware checkAuth
+app.get('/bat-computer', checkAuth, (req, res) => {
+  res.sendFile(path.join(__dirname, 'private', 'bat-computer.html'))
+})
+
+app.get('/api/me', checkAuth, (req, res) => {
+  res.json({
+    id: req.user.id,
+    username: req.user.username
+  })
+})
+
+app.get('/api/secrets', checkAuth, (req, res) => {
+  res.json([
+    { name: 'Batarang', desc: 'Arme de jet', icon: 'fa-shuriken' },
+    { name: 'Grappin', desc: 'Équipement d\'escalade', icon: 'fa-hook' },
+    { name: 'Capsule fumigène', desc: 'Échappatoire tactique', icon: 'fa-cloud' },
+    { name: 'Bombe électronique', desc: 'Brouilleur de signaux', icon: 'fa-zap' },
+    { name: 'Bat-Parachute', desc: 'Équipement de saut', icon: 'fa-parachute-box' },
+    { name: 'Gants renforcés', desc: 'Combat rapproché', icon: 'fa-hand-fist' }
+  ])
+})
+
+app.post('/api/reports', checkAuth, (req, res) => {
+  const { content } = req.body
+  if (!content) {
+    return res.status(400).send('Le rapport ne peut pas être vide.')
+  }
+  try {
+    const insert = db.prepare(
+      'INSERT INTO reports (user_id, content) VALUES (?, ?)'
+    )
+    insert.run(req.user.id, content)
+    res.status(201).json({ message: 'Rapport enregistré avec succès !' })
+  } catch (err) {
+    res.status(500).send('Erreur lors de l\'enregistrement.')
+  }
+})

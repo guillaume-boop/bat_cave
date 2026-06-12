@@ -1,20 +1,85 @@
-<form id="register-form">
-  <label for="username">Nom d'utilisateur</label>
-  <input
-    type="text"
-    id="username"
-    placeholder="Nom d'utilisateur"
-    required
-  />
-  <label for="password">Mot de passe</label>
-  <input
-    type="password"
-    id="password"
-    placeholder="Mot de passe"
-    required
-  />
-  <button type="submit">S'inscrire</button>
-  <p id="message"></p>
-  <a href="admin-page">Déjà un compte ? 🔒 Administration</a>
-</form>
-<script src="register.js"></script>
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription Batcave</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      body {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .container { max-width: 400px; }
+      .card {
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid #00d4ff;
+        border-radius: 10px;
+      }
+      .card-header {
+        background: rgba(0, 212, 255, 0.1);
+        border-bottom: 2px solid #00d4ff;
+      }
+      .card-header h3 { color: #00d4ff; }
+      .form-label { color: #00d4ff; font-weight: 600; }
+      .form-control {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid #00d4ff;
+        color: #fff;
+      }
+      .form-control::placeholder { color: #999; }
+      .form-control:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: #00d4ff;
+        box-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+      }
+      .btn-submit {
+        background: #00d4ff;
+        color: #1a1a2e;
+        font-weight: bold;
+        border: none;
+        width: 100%;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .btn-submit:hover { background: #00a8cc; }
+      #message { text-align: center; margin-top: 1rem; font-weight: bold; }
+      .footer-link { text-align: center; margin-top: 1rem; }
+      .footer-link a { color: #00d4ff; text-decoration: none; transition: 0.2s; }
+      .footer-link a:hover { text-decoration: underline; }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="card">
+        <div class="card-header">
+          <h3>Inscription Batcave</h3>
+        </div>
+        <div class="card-body">
+          <form id="register-form">
+            <div class="mb-3">
+              <label for="username" class="form-label">Nom d'utilisateur</label>
+              <input type="text" class="form-control" id="username" placeholder="Votre pseudo" required>
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">Mot de passe</label>
+              <input type="password" class="form-control" id="password" placeholder="Min 8 caractères" required>
+            </div>
+            <button type="submit" class="btn btn-submit">S'inscrire</button>
+            <p id="message"></p>
+          </form>
+          <div class="footer-link">
+            <p style="color: #999; margin-bottom: 0.5rem;">Accès direct :</p>
+            <a href="/bat-computer">Vers le Bat-Ordinateur</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="register.js"></script>
+  </body>
+</html>

@@ -12,10 +12,15 @@ document.getElementById('register-form').onsubmit = async e => {
   const messageElement = document.getElementById('message')
   if (response.ok) {
     messageElement.style.color = 'green'
-    messageElement.innerText =
-      "Inscription réussie !"
+    messageElement.innerText = 'Inscription réussie ! Redirection...'
+    const credentials = btoa(username + ':' + password)
+    localStorage.setItem('credentials', credentials)
+    setTimeout(() => {
+      window.location.href = '/bat-computer'
+    }, 1500)
   } else {
     messageElement.style.color = 'red'
-    messageElement.innerText = "Erreur lors de l'inscription."
+    const errorText = await response.text()
+    messageElement.innerText = 'Erreur : ' + errorText
   }
 }

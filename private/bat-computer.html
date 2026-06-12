@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bat-Ordinateur</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      body {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: #fff;
+        min-height: 100vh;
+      }
+      .container { margin-top: 3rem; }
+      .welcome-msg {
+        text-align: center;
+        margin-bottom: 3rem;
+      }
+      .welcome-msg h1 { color: #00d4ff; }
+      .gadgets-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+      }
+      .gadget-card {
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid #00d4ff;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+      }
+      .gadget-card:hover {
+        background: rgba(0, 212, 255, 0.2);
+        transform: translateY(-5px);
+      }
+      .gadget-card i {
+        font-size: 3rem;
+        color: #00d4ff;
+        margin-bottom: 1rem;
+      }
+      .gadget-card h5 {
+        color: #00d4ff;
+        margin-top: 1rem;
+      }
+      .gadget-card p {
+        font-size: 0.9rem;
+        color: #ccc;
+      }
+      .report-section {
+        background: rgba(255, 255, 255, 0.05);
+        border: 2px solid #00d4ff;
+        border-radius: 10px;
+        padding: 2rem;
+      }
+      .report-section textarea {
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
+        border: 1px solid #00d4ff;
+      }
+      .report-section textarea::placeholder { color: #999; }
+      .report-section button {
+        background: #00d4ff;
+        color: #1a1a2e;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      .report-section button:hover { background: #00a8cc; }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="welcome-msg">
+        <h1 id="welcome-text">Chargement...</h1>
+      </div>
+
+      <h2 style="color: #00d4ff; margin-bottom: 2rem;">Arsenal</h2>
+      <div class="gadgets-grid" id="gadgets-container"></div>
+
+      <div class="report-section">
+        <h3 style="color: #00d4ff; margin-bottom: 1.5rem;">Enregistrer une mission</h3>
+        <form id="report-form">
+          <div class="mb-3">
+            <textarea class="form-control" id="report-content" placeholder="Décrivez votre mission..." rows="4" required></textarea>
+          </div>
+          <button type="submit" class="btn w-100">Soumettre le rapport</button>
+          <p id="report-message" style="margin-top: 1rem; text-align: center;"></p>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      // Get credentials from localStorage
+      const credentials = localStorage.getItem('credentials')
+
+      // Call to /api/me to load welcome message
+      async function loadWelcome() {
+        try {
+          const response = await fetch('/api/me', {
+            headers: { 'Authorization': 'Basic ' + credentials }
+          })
+          if (response.ok) {
+            const user = await response.json()
+            document.getElementById('welcome-text').innerText = `Bienvenue, Justicier ${user.username}`
+          }
+        } catch (err) {
+          console.error('Erreur:', err)
+        }
+      }
+
+      // Call to /api/secrets to load gadgets
+      async function loadSecrets() {
+        try {
+          const response = await fetch('/api/secrets', {
+            headers: { 'Authorization': 'Basic ' + credentials }
+          })
+          if (response.ok) {
+            const gadgets = await response.json()
+            const container = document.getElementById('gadgets-container')
+            container.innerHTML = gadgets.map(g => `
+              <div class="gadget-card">
+                <i class="fas ${g.icon}"></i>
+                <h5>${g.name}</h5>
+                <p>${g.desc}</p>
+              </div>
+            `).join('')
+          }
+        } catch (err) {
+          console.error('Erreur:', err)
+        }
+      }
+
+      // Leaave a report 
+      document.getElementById('report-form').onsubmit = async e => {
+        e.preventDefault()
+        const content = document.getElementById('report-content').value
+
+        try {
+          const response = await fetch('/api/reports', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Basic ' + credentials
+            },
+            body: JSON.stringify({ content })
+          })
+
+          const messageEl = document.getElementById('report-message')
+          if (response.ok) {
+            messageEl.style.color = 'green'
+            messageEl.innerText = 'Rapport enregistré !'
+            document.getElementById('report-content').value = ''
+          } else {
+            messageEl.style.color = 'red'
+            messageEl.innerText = 'Erreur lors de l\'enregistrement.'
+          }
+        } catch (err) {
+          console.error('Erreur:', err)
+        }
+      }
+
+      loadWelcome()
+      loadSecrets()
+    </script>
+  </body>
+</html>
