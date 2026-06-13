@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="login-container">
+    <h1>Connexion</h1>
+    <form method="POST" action="/auth/login">
+      <label>Nom d'utilisateur</label>
+      <input type="text" name="username" class="form-control" required>
+
+      <label>Mot de passe</label>
+      <input type="password" name="password" class="form-control" required>
+
+      <button type="submit" class="btn btn-primary">Se connecter</button>
+    </form>
+  </div>
+  <script src="/script.js"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+const express = require('express')
+const fs = require('fs')
+const path = require('path')
+const db = require('../config/db')
+const authCheck = require('../middlewares/authCheck')
+
+const router = express.Router()
+
+// Route protégée /bat-computer
+router.get('/bat-computer', authCheck, (req, res) => {
+  const batcomputerPath = path.join(__dirname, '../views/bat-computer.html')
+  let html = fs.readFileSync(batcomputerPath, 'utf-8')
+
+  html = html.replace('{{username}}', req.session.username)
+  html = html.replace('{{userId}}', req.session.userId)
+
+  res.send(html)
+})
+
+// POST /report - Soumettre un rapport
+router.post('/report', authCheck, (req, res) => {
+  const { content } = req.body
+
+  if (!content || content.trim() === '') { return res.status(400).json({ error: 'Le rapport ne peut pas être vide' }) }
+
+  try {
+
+    db.prepare('INSERT INTO reports (user_id, content) VALUES (?, ?)').run(
+      req.session.userId,
+      content
+    )
+
+    res.status(201).json({ message: 'Rapport enregistré avec succès !' })
+  } catch (err) {
+    console.error('Erreur insertion rapport:', err)
+    res.status(500).json({ error: 'Erreur lors de l\'enregistrement du rapport' })
+  }
+})
+
+module.exports = router

@@ -1,0 +1,256 @@
+/* Variables de couleur */
+:root {
+  --primary-color: #00d4ff;
+  --dark-bg: #1a1a2e;
+  --darker-bg: #16213e;
+  --card-bg: rgba(255, 255, 255, 0.1);
+  --text-light: #fff;
+  --text-muted: #ccc;
+  --text-dim: #999;
+}
+
+/* Styles globaux */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  color: var(--text-light);
+  background: linear-gradient(135deg, var(--dark-bg) 0%, var(--darker-bg) 100%);
+  min-height: 100vh;
+}
+
+/* Conteneur principal */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Textes et titres */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+p {
+  line-height: 1.6;
+}
+
+/* Formulaires */
+.form-control {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-light) !important;
+  border: 1px solid var(--primary-color) !important;
+}
+
+.form-control::placeholder {
+  color: var(--text-dim);
+}
+
+.form-control:focus {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 10px rgba(0, 212, 255, 0.3) !important;
+}
+
+/* Boutons */
+.btn-primary,
+.btn-custom {
+  background: var(--primary-color) !important;
+  color: var(--dark-bg) !important;
+  font-weight: bold;
+  border: none !important;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover,
+.btn-custom:hover {
+  background: #00a8cc !important;
+  transform: translateY(-2px);
+}
+
+/* Cartes */
+.card {
+  background: var(--card-bg);
+  border: 2px solid var(--primary-color);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  background: rgba(0, 212, 255, 0.2);
+  transform: translateY(-5px);
+}
+
+/* Liens */
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+a:hover {
+  text-decoration: underline;
+  color: #00a8cc;
+}
+
+/* Message de statut */
+.message-success {
+  color: #00d4ff;
+}
+
+.message-error {
+  color: #ff6b6b;
+}
+
+.message-info {
+  color: #a78bfa;
+}
+
+/* ===== LOGIN PAGE ===== */
+.login-container {
+  max-width: 400px;
+  margin: 100px auto;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid var(--primary-color);
+  border-radius: 10px;
+  padding: 2rem;
+}
+
+.login-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.login-container label {
+  color: var(--text-light);
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+/* ===== BAT-COMPUTER PAGE ===== */
+.welcome-msg {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.welcome-msg h1 {
+  color: var(--primary-color);
+}
+
+.gadgets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.gadget-card {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid var(--primary-color);
+  border-radius: 10px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.gadget-card:hover {
+  background: rgba(0, 212, 255, 0.2);
+  transform: translateY(-5px);
+}
+
+.gadget-card i {
+  font-size: 3rem;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+.gadget-card h5 {
+  color: var(--primary-color);
+  margin-top: 1rem;
+}
+
+.gadget-card p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.arsenal-title {
+  color: var(--primary-color);
+  margin-bottom: 2rem;
+}
+
+.logout-section {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.logout-section a {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.report-section {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid var(--primary-color);
+  border-radius: 10px;
+  padding: 2rem;
+  margin-bottom: 3rem;
+}
+
+.report-section h3 {
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+}
+
+.report-section textarea {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-light) !important;
+  border: 1px solid var(--primary-color) !important;
+}
+
+.report-section textarea::placeholder {
+  color: var(--text-dim);
+}
+
+.report-section button {
+  background: var(--primary-color) !important;
+  color: var(--dark-bg) !important;
+  font-weight: bold;
+  border: none !important;
+  transition: all 0.2s;
+}
+
+.report-section button:hover {
+  background: #00a8cc !important;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  h2 {
+    font-size: 1.3rem;
+  }
+
+  .login-container {
+    margin: 50px auto;
+    padding: 1.5rem;
+  }
+
+  .gadgets-grid {
+    grid-template-columns: 1fr;
+  }
+}
