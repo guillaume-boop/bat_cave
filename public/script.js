@@ -36,8 +36,3 @@ function clearForm(formId) {
   const form = document.getElementById(formId)
   if (form) form.reset()
 }
-
-// Vérifier si un élément existe
-function hasElement(elementId) {
-  return document.getElementById(elementId) !== null
-}

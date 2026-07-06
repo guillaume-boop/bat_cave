@@ -11,8 +11,7 @@ router.get('/bat-computer', authCheck, (req, res) => {
   const batcomputerPath = path.join(__dirname, '../views/bat-computer.html')
   let html = fs.readFileSync(batcomputerPath, 'utf-8')
 
-  html = html.replace('{{username}}', req.session.username)
-  html = html.replace('{{userId}}', req.session.userId)
+  html = html.replaceAll('{{username}}', req.session.username)
 
   res.send(html)
 })

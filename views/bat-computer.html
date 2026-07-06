@@ -34,9 +34,8 @@
       </div>
     </div>
 
+    <script src="/script.js"></script>
     <script>
-      document.getElementById('welcome-text').innerText = 'Bienvenue, Justicier {{username}} !'
-
       const gadgets = [
         { name: 'Grapnel Hook', desc: 'Crochet de rappel pour escalader les bâtiments', icon: 'fa-hook' },
         { name: 'Batarang', desc: 'Arme de jet en forme de chauve-souris', icon: 'fa-star' },
@@ -61,35 +60,24 @@
         e.preventDefault()
         const content = document.getElementById('report-content').value
 
-        try {
-          const response = await fetch('/report', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ content })
-          })
+        const result = await apiCall('/report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ content })
+        })
 
-          const messageEl = document.getElementById('report-message')
-          if (response.ok) {
-            const data = await response.json()
-            messageEl.style.color = '#00d4ff'
-            messageEl.innerText = data.message
-            document.getElementById('report-content').value = ''
-          } else {
-            const data = await response.json()
-            messageEl.style.color = 'red'
-            messageEl.innerText = data.error || 'Erreur lors de l\'enregistrement.'
-          }
-        } catch (err) {
-          console.error('Erreur:', err)
-          document.getElementById('report-message').style.color = 'red'
-          document.getElementById('report-message').innerText = 'Erreur réseau'
+        if (result.ok) {
+          showMessage('report-message', result.data.message, 'success')
+          clearForm('report-form')
+        } else {
+          const error = result.data?.error || result.error || 'Erreur lors de l\'enregistrement.'
+          showMessage('report-message', error, 'error')
         }
       }
 
       loadGadgets()
     </script>
-    <script src="/script.js"></script>
   </body>
 </html>
