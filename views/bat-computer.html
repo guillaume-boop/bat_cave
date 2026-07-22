@@ -30,7 +30,7 @@
       </div>
 
       <div class="logout-section">
-        <a href="/auth/logout">Se déconnecter</a>
+        <a href="#" id="logout-btn">Se déconnecter</a>
       </div>
     </div>
 
@@ -75,6 +75,12 @@
           const error = result.data?.error || result.error || 'Erreur lors de l\'enregistrement.'
           showMessage('report-message', error, 'error')
         }
+      }
+
+      document.getElementById('logout-btn').onclick = async e => {
+        e.preventDefault()
+        await fetch('/auth/logout', { method: 'POST' })
+        window.location.href = '/auth/login'
       }
 
       loadGadgets()

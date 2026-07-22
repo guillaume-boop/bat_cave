@@ -2,8 +2,9 @@
 const errorHandler = (err, req, res, next) => {
   const statusCode = err.statusCode || 500
 
-  // Si c'est un 401 → redirige vers login
+  // Si c'est un 401 → JSON pour les appels fetch (retry), redirection sinon
   if (statusCode === 401) {
+    if (req.accepts(['html', 'json']) === 'json') { return res.status(401).json({ error: err.message }) }
     return res.redirect('/auth/login')
   }
 

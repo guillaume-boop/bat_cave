@@ -1,15 +1,15 @@
-# TP2 : Session-Based Authentication
+# TP3 : JWT Authentication
+
+Authentification **stateless** par JSON Web Token, avec accessToken court + refreshToken révocable.
 
 ## Installation
 
-Installer les dépendances :
 ```bash
 npm install
 ```
 
 ## Lancer le serveur
 
-Avec hot-reload (redémarre auto à chaque modification) :
 ```bash
 npm run dev
 ```
@@ -18,8 +18,8 @@ npm run dev
 
 Créer un fichier `.env` à la racine :
 ```
-PORT=
-SESSION_SECRET=
+PORT=3000
+JWT_SECRET=<clé générée avec: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
 ```
 
 **Identifiants de test :**
@@ -32,38 +32,47 @@ SESSION_SECRET=
 | Méthode | Route | Description |
 |---------|-------|-------------|
 | GET | `/` | Redirige vers `/auth/login` |
-| GET | `/auth/login` | Affiche formulaire de connexion |
-| POST | `/auth/login` | Traite connexion + régénère session |
-| GET | `/auth/logout` | Déconnexion + destruction session |
+| GET | `/auth/login` | Affiche le formulaire de connexion |
+| POST | `/auth/login` | Vérifie les identifiants, pose accessToken + refreshToken |
+| POST | `/auth/refresh` | Régénère un accessToken depuis le refreshToken |
+| POST | `/auth/logout` | Révoque le refreshToken en base + efface les cookies |
 
-### Privées (nécessitent authentification)
+### Privées (JWT requis)
 | Méthode | Route | Description |
 |---------|-------|-------------|
 | GET | `/bat-computer` | Page protégée Bat-Ordinateur |
 | POST | `/report` | Enregistrer une mission en BDD |
 
+## Sécurité
+
+- **accessToken** : JWT signé (`HS256`), durée `15s` (pédagogique — 15min à 1h en prod), en cookie `httpOnly`.
+- **refreshToken** : chaîne opaque (80 hex), stockée en base 7 jours, en cookie `httpOnly`.
+- Cookies : `httpOnly` (anti-XSS) + `sameSite: strict` (anti-CSRF). Passer `secure: true` en prod (HTTPS).
+- Le payload JWT est **lisible mais infalsifiable** : y modifier son `role` casse la signature → 401.
+
 ## Structure du Projet
 
 ```
-batcave-security/
+bat_cave/
 ├── /config
-│   └── db.js                    # Configuration SQLite + création tables
+│   └── db.js                    # SQLite : users (+role), reports, refresh_tokens
 ├── /middlewares
-│   ├── authCheck.js             # Vérification authentification
-│   └── errorHandler.js          # Gestion erreurs globales (401 → login)
+│   ├── authCheck.js             # Vérification du JWT (cookie token → req.user)
+│   └── errorHandler.js          # 401 → JSON (fetch) ou redirection (navigation)
 ├── /routes
-│   ├── auth.js                  # Routes /auth/login, /auth/logout
-│   └── batcomputer.js           # Route /bat-computer + POST /report
+│   ├── auth.js                  # /auth/login, /auth/refresh, /auth/logout
+│   └── batcomputer.js           # /bat-computer + POST /report
 ├── /views
-│   ├── login.html               # Formulaire de connexion
-│   └── bat-computer.html        # Page protégée + formulaire rapport
+│   ├── login.html               # Connexion (fetch → JSON)
+│   └── bat-computer.html        # Page protégée + rapport + logout
 ├── /public
-│   ├── style.css                # Styles réutilisables
-│   └── script.js                # Fonctions JS partagées
-├── server.js                    # Point d'entrée (imports + app.listen)
+│   ├── style.css                # Styles
+│   └── script.js                # apiCall + fetchWithRetry (Retry Pattern)
+├── server.js                    # Point d'entrée stateless
 ├── database.db                  # SQLite (auto-créée)
-├── .env                         # Secrets (PORT, SESSION_SECRET)
-├── .gitignore                   # Protection fuites
+├── .env                         # Secrets (PORT, JWT_SECRET)
+├── .gitignore
 ├── package.json
+├── TP3.md                       # Documentation pas-à-pas
 └── README.md
 ```

@@ -1,8 +1,6 @@
 // Import des librairies et de la BDD
 require('dotenv').config()
 const express = require('express')
-const session = require('express-session')
-const bcrypt = require('bcrypt')
 const db = require('./config/db')
 const errorHandler = require('./middlewares/errorHandler')
 
@@ -12,19 +10,6 @@ const app = express()
 app.use(express.json())
 // Permet de lire les données des formulaires HTML
 app.use(express.urlencoded({ extended: true }))
-// Configuration des sessions
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-  name: 'bat_identity',
-  cookie: {
-    httpOnly: true,
-    sameSite: 'strict',
-    maxAge: 1800000,
-    secure: false
-  }
-}))
 // Ouvre les fichiers frontend non protégés
 app.use(express.static('public'))
 

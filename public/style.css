@@ -133,6 +133,13 @@ a:hover {
   margin-top: 10px;
 }
 
+.auth-switch {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
 /* ===== BAT-COMPUTER PAGE ===== */
 .welcome-msg {
   text-align: center;

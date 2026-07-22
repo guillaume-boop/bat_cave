@@ -7,9 +7,15 @@ db.prepare(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
-    password_hash TEXT
+    password_hash TEXT,
+    role TEXT DEFAULT 'JUSTICIER'
   )
 `).run()
+
+// Migration : ajoute la colonne role si la base date du TP2
+const columns = db.prepare('PRAGMA table_info(users)').all()
+const hasRole = columns.some((col) => col.name === 'role')
+if (!hasRole) { db.prepare("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'JUSTICIER'").run() }
 
 // Création de la table reports
 db.prepare(`
@@ -19,6 +25,17 @@ db.prepare(`
     content TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
+  )
+`).run()
+
+// Création de la table refresh_tokens (état minimal pour révoquer une connexion)
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS refresh_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT UNIQUE NOT NULL,
+    user_id INTEGER NOT NULL,
+    expires_at TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   )
 `).run()
 
@@ -32,7 +49,7 @@ async function initializeDefaultUser() {
     const hash = await bcrypt.hash(password, 10)
 
     try {
-      db.prepare('INSERT INTO users (username, password_hash) VALUES (?, ?)').run(username, hash)
+      db.prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)').run(username, hash, 'ADMIN')
       console.log('✅ Utilisateur par défaut créé : batman / password123')
     } catch (err) {
       console.error('Erreur création utilisateur:', err)

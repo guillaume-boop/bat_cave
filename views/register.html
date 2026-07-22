@@ -3,34 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Connexion</title>
+  <title>Créer un compte</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <div class="login-container">
-    <h1>Connexion</h1>
-    <form id="login-form">
+    <h1>Créer un compte</h1>
+    <form id="register-form">
       <label>Nom d'utilisateur</label>
       <input type="text" name="username" class="form-control" required>
 
       <label>Mot de passe</label>
-      <input type="password" name="password" class="form-control" required>
+      <input type="password" name="password" class="form-control" minlength="6" required>
 
-      <button type="submit" class="btn btn-primary">Se connecter</button>
-      <p id="login-message"></p>
+      <button type="submit" class="btn btn-primary">S'inscrire</button>
+      <p id="register-message"></p>
     </form>
-    <p class="auth-switch">Pas encore de compte ? <a href="/auth/register">S'inscrire</a></p>
+    <p class="auth-switch">Déjà un compte ? <a href="/auth/login">Se connecter</a></p>
   </div>
 
   <script src="/script.js"></script>
   <script>
-    document.getElementById('login-form').onsubmit = async e => {
+    document.getElementById('register-form').onsubmit = async e => {
       e.preventDefault()
       const username = e.target.username.value
       const password = e.target.password.value
 
-      // fetch direct (pas de retry) : un 401 ici = mauvais identifiants
-      const response = await fetch('/auth/login', {
+      // fetch direct : le compte connecte l'utilisateur, on file au bat-computer
+      const response = await fetch('/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
@@ -40,7 +40,7 @@
         window.location.href = '/bat-computer'
       } else {
         const data = await response.json()
-        showMessage('login-message', data.error || 'Erreur de connexion', 'error')
+        showMessage('register-message', data.error || 'Erreur lors de l\'inscription', 'error')
       }
     }
   </script>

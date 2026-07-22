@@ -11,28 +11,26 @@ router.get('/bat-computer', authCheck, (req, res) => {
   const batcomputerPath = path.join(__dirname, '../views/bat-computer.html')
   let html = fs.readFileSync(batcomputerPath, 'utf-8')
 
-  html = html.replaceAll('{{username}}', req.session.username)
+  html = html.replaceAll('{{username}}', req.user.username)
 
   res.send(html)
 })
 
 // POST /report - Soumettre un rapport
-router.post('/report', authCheck, (req, res) => {
+router.post('/report', authCheck, (req, res, next) => {
   const { content } = req.body
 
   if (!content || content.trim() === '') { return res.status(400).json({ error: 'Le rapport ne peut pas être vide' }) }
 
   try {
-
     db.prepare('INSERT INTO reports (user_id, content) VALUES (?, ?)').run(
-      req.session.userId,
+      req.user.id,
       content
     )
 
     res.status(201).json({ message: 'Rapport enregistré avec succès !' })
   } catch (err) {
-    console.error('Erreur insertion rapport:', err)
-    res.status(500).json({ error: 'Erreur lors de l\'enregistrement du rapport' })
+    next(err)
   }
 })
 
