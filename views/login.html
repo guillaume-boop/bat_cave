@@ -17,32 +17,25 @@
       <input type="password" name="password" class="form-control" required>
 
       <button type="submit" class="btn btn-primary">Se connecter</button>
-      <p id="login-message"></p>
     </form>
+
+    <div id="twofa" class="hidden">
+      <div id="twofa-qr-block" class="hidden">
+        <p>Double authentification obligatoire : scannez ce QR code pour la configurer.</p>
+        <img id="twofa-qr" alt="QR code 2FA">
+      </div>
+      <form id="code-form">
+        <label>Code à 6 chiffres</label>
+        <input type="text" name="code" class="form-control" inputmode="numeric" autocomplete="one-time-code" placeholder="000000">
+        <button type="submit" class="btn btn-primary">Valider le code</button>
+      </form>
+    </div>
+
+    <p id="login-message"></p>
     <p class="auth-switch">Pas encore de compte ? <a href="/auth/register">S'inscrire</a></p>
   </div>
 
   <script src="/script.js"></script>
-  <script>
-    document.getElementById('login-form').onsubmit = async e => {
-      e.preventDefault()
-      const username = e.target.username.value
-      const password = e.target.password.value
-
-      // fetch direct (pas de retry) : un 401 ici = mauvais identifiants
-      const response = await fetch('/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      })
-
-      if (response.ok) {
-        window.location.href = '/bat-computer'
-      } else {
-        const data = await response.json()
-        showMessage('login-message', data.error || 'Erreur de connexion', 'error')
-      }
-    }
-  </script>
+  <script src="/login.js"></script>
 </body>
 </html>

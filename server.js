@@ -1,11 +1,26 @@
 // Import des librairies et de la BDD
 require('dotenv').config()
 const express = require('express')
+const helmet = require('helmet')
 const db = require('./config/db')
 const errorHandler = require('./middlewares/errorHandler')
 
 // Créé du serveur Express
 const app = express()
+// Security Headers : masque Express, anti-clickjacking, nosniff, HSTS et CSP
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      // script-src sans 'unsafe-inline' : un script XSS injecté ne s'exécute pas
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net', 'https://cdnjs.cloudflare.com'],
+      fontSrc: ["'self'", 'https://cdnjs.cloudflare.com'],
+      // data: nécessaire pour afficher le QR code de la 2FA
+      imgSrc: ["'self'", 'data:']
+    }
+  }
+}))
 // Rend possible la lecture et l'écriture du JSON
 app.use(express.json())
 // Permet de lire les données des formulaires HTML

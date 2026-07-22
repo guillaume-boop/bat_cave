@@ -140,6 +140,21 @@ a:hover {
   color: var(--text-muted);
 }
 
+/* Utilitaire d'affichage */
+.hidden {
+  display: none;
+}
+
+/* QR code 2FA */
+#twofa-qr {
+  display: block;
+  margin: 1rem auto;
+  max-width: 200px;
+  background: #fff;
+  padding: 8px;
+  border-radius: 8px;
+}
+
 /* ===== BAT-COMPUTER PAGE ===== */
 .welcome-msg {
   text-align: center;

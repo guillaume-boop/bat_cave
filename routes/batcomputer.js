@@ -6,12 +6,20 @@ const authCheck = require('../middlewares/authCheck')
 
 const router = express.Router()
 
+// Parade XSS : neutralise les caractères spéciaux avant injection dans le HTML
+const escapeHtml = (str) => str
+  .replaceAll('&', '&amp;')
+  .replaceAll('<', '&lt;')
+  .replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;')
+  .replaceAll("'", '&#39;')
+
 // Route protégée /bat-computer
 router.get('/bat-computer', authCheck, (req, res) => {
   const batcomputerPath = path.join(__dirname, '../views/bat-computer.html')
   let html = fs.readFileSync(batcomputerPath, 'utf-8')
 
-  html = html.replaceAll('{{username}}', req.user.username)
+  html = html.replaceAll('{{username}}', escapeHtml(req.user.username))
 
   res.send(html)
 })

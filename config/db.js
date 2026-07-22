@@ -8,14 +8,18 @@ db.prepare(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
     password_hash TEXT,
-    role TEXT DEFAULT 'JUSTICIER'
+    role TEXT DEFAULT 'JUSTICIER',
+    two_factor_secret TEXT,
+    two_factor_enabled INTEGER DEFAULT 0
   )
 `).run()
 
-// Migration : ajoute la colonne role si la base date du TP2
+// Migrations : ajoute les colonnes manquantes si la base date d'un TP précédent
 const columns = db.prepare('PRAGMA table_info(users)').all()
-const hasRole = columns.some((col) => col.name === 'role')
-if (!hasRole) { db.prepare("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'JUSTICIER'").run() }
+const hasColumn = (name) => columns.some((col) => col.name === name)
+if (!hasColumn('role')) { db.prepare("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'JUSTICIER'").run() }
+if (!hasColumn('two_factor_secret')) { db.prepare('ALTER TABLE users ADD COLUMN two_factor_secret TEXT').run() }
+if (!hasColumn('two_factor_enabled')) { db.prepare('ALTER TABLE users ADD COLUMN two_factor_enabled INTEGER DEFAULT 0').run() }
 
 // Création de la table reports
 db.prepare(`

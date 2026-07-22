@@ -4,6 +4,8 @@ const path = require('path')
 const crypto = require('crypto')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const qrcode = require('qrcode')
+const { authenticator } = require('@otplib/preset-v11')
 const db = require('../config/db')
 
 const router = express.Router()
@@ -39,6 +41,19 @@ function issueSession(res, user) {
   res.cookie('refreshToken', refreshToken, { ...cookieOptions, maxAge: REFRESH_MAX_AGE })
 }
 
+// Génère (si absent) le secret 2FA de l'utilisateur et renvoie le QR code à scanner
+async function ensureSecretQr(user) {
+  let secret = user.two_factor_secret
+
+  if (!secret) {
+    secret = authenticator.generateSecret()
+    db.prepare('UPDATE users SET two_factor_secret = ? WHERE id = ?').run(secret, user.id)
+  }
+
+  const otpauth = authenticator.keyuri(user.username, 'Bat-Cave', secret)
+  return qrcode.toDataURL(otpauth)
+}
+
 // GET /auth/login
 router.get('/login', (req, res) => {
   const loginPath = path.join(__dirname, '../views/login.html')
@@ -53,7 +68,7 @@ router.get('/register', (req, res) => {
   res.send(html)
 })
 
-// POST /auth/register - Crée un compte puis connecte directement l'utilisateur
+// POST /auth/register - Crée un compte puis lance l'enrôlement 2FA obligatoire (pas de session)
 router.post('/register', async (req, res, next) => {
   const { username, password } = req.body
 
@@ -68,8 +83,9 @@ router.post('/register', async (req, res, next) => {
     const hash = await bcrypt.hash(password, 10)
     const result = db.prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)').run(username, hash, 'JUSTICIER')
 
-    issueSession(res, { id: result.lastInsertRowid, username, role: 'JUSTICIER' })
-    res.status(201).json({ message: 'Compte créé' })
+    // 2FA obligatoire : aucun jeton tant que le code TOTP n'a pas été confirmé
+    const qrCode = await ensureSecretQr({ id: result.lastInsertRowid, username, two_factor_secret: null })
+    res.status(201).json({ username, qrCode })
   } catch (err) {
     next(err)
   }
@@ -86,8 +102,50 @@ router.post('/login', async (req, res, next) => {
 
     if (!user || !(await bcrypt.compare(password, user.password_hash))) { return res.status(401).json({ error: 'Identifiants invalides' }) }
 
+    // 2FA obligatoire mais pas encore configurée : accès refusé, on renvoie le QR d'enrôlement
+    if (user.two_factor_enabled !== 1) { return res.status(403).json({ requires2FASetup: true, username: user.username, qrCode: await ensureSecretQr(user) }) }
+
+    // Premier verrou franchi. La 2FA étant active, on bloque la distribution du jeton
+    res.json({ requires2FA: true, username: user.username })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// POST /auth/verify-2fa - Second verrou : valide le code TOTP puis délivre le jeton
+router.post('/verify-2fa', (req, res, next) => {
+  const { username, code } = req.body
+
+  if (!username || !code) { return res.status(400).json({ error: 'Nom d\'utilisateur et code requis' }) }
+
+  try {
+    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username)
+
+    if (!user || user.two_factor_enabled !== 1) { return res.status(401).json({ error: 'Accès refusé' }) }
+    if (!authenticator.check(code, user.two_factor_secret)) { return res.status(401).json({ error: 'Code 2FA invalide ou expiré' }) }
+
     issueSession(res, user)
-    res.json({ message: 'Connexion réussie' })
+    res.json({ message: 'Double authentification réussie' })
+  } catch (err) {
+    next(err)
+  }
+})
+
+// POST /auth/confirm-2fa - Finalise l'enrôlement : valide le 1er code, active la 2FA et connecte
+router.post('/confirm-2fa', (req, res, next) => {
+  const { username, code } = req.body
+
+  if (!username || !code) { return res.status(400).json({ error: 'Nom d\'utilisateur et code requis' }) }
+
+  try {
+    const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username)
+
+    if (!user || !user.two_factor_secret) { return res.status(400).json({ error: 'Aucune 2FA en attente pour ce compte' }) }
+    if (!authenticator.check(code, user.two_factor_secret)) { return res.status(401).json({ error: 'Code incorrect. Activation avortée' }) }
+
+    db.prepare('UPDATE users SET two_factor_enabled = 1 WHERE id = ?').run(user.id)
+    issueSession(res, user)
+    res.json({ message: 'La 2FA est activée, connexion réussie' })
   } catch (err) {
     next(err)
   }
