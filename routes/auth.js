@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken')
 const qrcode = require('qrcode')
 const { authenticator } = require('@otplib/preset-v11')
 const db = require('../config/db')
+const oauth = require('../services/googleOAuth')
 
 const router = express.Router()
 
@@ -15,7 +16,9 @@ const ACCESS_MAX_AGE = 15000
 const REFRESH_MAX_AGE = 7 * 24 * 60 * 60 * 1000
 
 // Options communes des cookies de jetons
-const cookieOptions = { httpOnly: true, sameSite: 'strict', secure: false }
+// sameSite 'lax' (et non 'strict') : indispensable pour que le cookie soit renvoyé
+// après la redirection cross-site de Google (OAuth). Bloque toujours les POST cross-site (anti-CSRF).
+const cookieOptions = { httpOnly: true, sameSite: 'lax', secure: false }
 
 // Signe un jeton d'accès autonome contenant le profil de l'utilisateur
 function signAccessToken(user) {
@@ -100,7 +103,8 @@ router.post('/login', async (req, res, next) => {
   try {
     const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username)
 
-    if (!user || !(await bcrypt.compare(password, user.password_hash))) { return res.status(401).json({ error: 'Identifiants invalides' }) }
+    // Un compte Google n'a pas de mot de passe local : connexion par mot de passe refusée
+    if (!user || !user.password_hash || !(await bcrypt.compare(password, user.password_hash))) { return res.status(401).json({ error: 'Identifiants invalides' }) }
 
     // 2FA obligatoire mais pas encore configurée : accès refusé, on renvoie le QR d'enrôlement
     if (user.two_factor_enabled !== 1) { return res.status(403).json({ requires2FASetup: true, username: user.username, qrCode: await ensureSecretQr(user) }) }
@@ -181,6 +185,48 @@ router.post('/logout', (req, res) => {
   res.clearCookie('token')
   res.clearCookie('refreshToken')
   res.json({ message: 'Déconnexion et révocation réussies' })
+})
+
+// GET /auth/login/google - Initialise le flux OAuth2 / PKCE et redirige vers Google
+router.get('/login/google', (req, res) => {
+  const state = oauth.generateState()
+  const codeVerifier = oauth.generateCodeVerifier()
+  const codeChallenge = oauth.generateCodeChallenge(codeVerifier)
+
+  // Persistance temporaire du state + code_verifier (validation au retour)
+  db.prepare('INSERT INTO oauth_sessions (state, code_verifier) VALUES (?, ?)').run(state, codeVerifier)
+
+  res.redirect(oauth.getGoogleAuthUrl(state, codeChallenge))
+})
+
+// GET /auth/callback/google - Retour de Google : valide le state, échange le code, connecte
+router.get('/callback/google', async (req, res, next) => {
+  const { code, state } = req.query
+
+  const session = db.prepare('SELECT code_verifier FROM oauth_sessions WHERE state = ?').get(state)
+
+  if (!session) { return res.status(403).send('State invalide. Accès refusé.') }
+
+  // Session OAuth consommée une seule fois (anti-rejeu)
+  db.prepare('DELETE FROM oauth_sessions WHERE state = ?').run(state)
+
+  try {
+    const tokens = await oauth.exchangeCodeForTokens(code, session.code_verifier)
+    const profile = oauth.decodeIdToken(tokens.id_token)
+
+    // Upsert du profil Google (aucun mot de passe) ; 2FA déléguée à Google
+    db.prepare(`
+      INSERT INTO users (username, email, role, provider, google_sub, two_factor_enabled)
+      VALUES (?, ?, 'JUSTICIER', 'google', ?, 1)
+      ON CONFLICT(google_sub) DO UPDATE SET username = excluded.username, email = excluded.email
+    `).run(profile.name, profile.email, profile.sub)
+
+    const user = db.prepare('SELECT * FROM users WHERE google_sub = ?').get(profile.sub)
+    issueSession(res, user)
+    res.redirect('/bat-computer')
+  } catch (err) {
+    next(err)
+  }
 })
 
 module.exports = router

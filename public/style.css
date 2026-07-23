@@ -145,6 +145,44 @@ a:hover {
   display: none;
 }
 
+/* Connexion Google (OAuth) */
+.oauth-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--text-dim);
+  margin: 1.5rem 0;
+}
+
+.oauth-divider::before,
+.oauth-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--text-dim);
+}
+
+.oauth-divider span {
+  padding: 0 1rem;
+  font-size: 0.9rem;
+}
+
+.btn-google {
+  display: block;
+  text-align: center;
+  padding: 0.6rem;
+  background: #fff;
+  color: #1a1a2e;
+  font-weight: bold;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.btn-google:hover {
+  background: #e0e0e0;
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+
 /* QR code 2FA */
 #twofa-qr {
   display: block;

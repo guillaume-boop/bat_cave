@@ -10,7 +10,10 @@ db.prepare(`
     password_hash TEXT,
     role TEXT DEFAULT 'JUSTICIER',
     two_factor_secret TEXT,
-    two_factor_enabled INTEGER DEFAULT 0
+    two_factor_enabled INTEGER DEFAULT 0,
+    email TEXT,
+    provider TEXT DEFAULT 'local',
+    google_sub TEXT
   )
 `).run()
 
@@ -20,6 +23,21 @@ const hasColumn = (name) => columns.some((col) => col.name === name)
 if (!hasColumn('role')) { db.prepare("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'JUSTICIER'").run() }
 if (!hasColumn('two_factor_secret')) { db.prepare('ALTER TABLE users ADD COLUMN two_factor_secret TEXT').run() }
 if (!hasColumn('two_factor_enabled')) { db.prepare('ALTER TABLE users ADD COLUMN two_factor_enabled INTEGER DEFAULT 0').run() }
+if (!hasColumn('email')) { db.prepare('ALTER TABLE users ADD COLUMN email TEXT').run() }
+if (!hasColumn('provider')) { db.prepare("ALTER TABLE users ADD COLUMN provider TEXT DEFAULT 'local'").run() }
+if (!hasColumn('google_sub')) { db.prepare('ALTER TABLE users ADD COLUMN google_sub TEXT').run() }
+
+// Unicité de l'identifiant Google (les NULL des comptes locaux restent autorisés)
+db.prepare('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users(google_sub)').run()
+
+// Sessions OAuth temporaires (state anti-CSRF + code_verifier PKCE)
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS oauth_sessions (
+    state TEXT PRIMARY KEY,
+    code_verifier TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`).run()
 
 // Création de la table reports
 db.prepare(`

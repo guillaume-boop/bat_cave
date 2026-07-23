@@ -1,7 +1,7 @@
-# TP4 : Sécurité & 2FA
+# TP5 : OAuth 2.0 & OpenID Connect
 
-Application JWT **stateless** (accessToken court + refreshToken révocable) durcie contre XSS / CSRF /
-MITM (helmet + CSP + échappement), avec **double authentification TOTP obligatoire**.
+Application JWT **stateless** durcie (helmet + CSP), avec **2FA TOTP obligatoire** en local **et**
+connexion fédérée **Google** (« Se connecter avec Google ») via le flux **Authorization Code + PKCE**.
 
 ## Installation
 
@@ -21,11 +21,20 @@ Créer un fichier `.env` à la racine :
 ```
 PORT=3000
 JWT_SECRET=<clé générée avec: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
+
+# OAuth Google (voir TP5.md pour créer les identifiants)
+GOOGLE_AUTH_ENDPOINT=https://accounts.google.com/o/oauth2/v2/auth
+GOOGLE_TOKEN_ENDPOINT=https://oauth2.googleapis.com/token
+REDIRECT_URI=http://localhost:3000/auth/callback/google
+GOOGLE_CLIENT_ID=
+GOOGLE_CLIENT_SECRET=
 ```
 
-**Identifiants de test :**
+**Identifiants de test (login local) :**
 - Username : `batman`
 - Password : `password123`
+
+> La connexion Google nécessite de créer un Client ID/Secret dans la Google Cloud Console — voir [TP5.md](TP5.md).
 
 ## Routes
 
@@ -40,6 +49,8 @@ JWT_SECRET=<clé générée avec: node -e "console.log(require('crypto').randomB
 | POST | `/auth/verify-2fa` | Second verrou : valide le code TOTP puis pose les jetons |
 | POST | `/auth/refresh` | Régénère un accessToken depuis le refreshToken |
 | POST | `/auth/logout` | Révoque le refreshToken en base + efface les cookies |
+| GET | `/auth/login/google` | Lance le flux OAuth2/PKCE (redirige vers Google) |
+| GET | `/auth/callback/google` | Retour Google : valide le state, échange le code, ouvre la session |
 
 ### Privées (JWT requis)
 | Méthode | Route | Description |
@@ -55,7 +66,9 @@ JWT_SECRET=<clé générée avec: node -e "console.log(require('crypto').randomB
 - **MITM** : `secure: true` en prod (HTTPS) + HSTS.
 - **accessToken** : JWT `HS256`, durée `15s` (pédagogique — 15min à 1h en prod), cookie `httpOnly`.
 - **refreshToken** : chaîne opaque (80 hex), stockée en base 7 jours, cookie `httpOnly`.
-- **2FA (TOTP) obligatoire** : `@otplib/preset-v11` + QR code (`qrcode`). Aucun jeton sans code validé.
+- **2FA (TOTP) obligatoire** (local) : `@otplib/preset-v11` + QR code (`qrcode`). Aucun jeton sans code validé.
+- **OAuth2 / OIDC (Google)** : flux Authorization Code + **PKCE** (SHA-256), `state` anti-CSRF à usage unique,
+  échange serveur-à-serveur (le `client_secret` ne quitte jamais le backend). 2FA déléguée à Google.
 - Le payload JWT est **lisible mais infalsifiable** : y modifier son `role` casse la signature → 401.
 
 ## Structure du Projet
@@ -63,12 +76,14 @@ JWT_SECRET=<clé générée avec: node -e "console.log(require('crypto').randomB
 ```
 bat_cave/
 ├── /config
-│   └── db.js                    # SQLite : users (+role, +2FA), reports, refresh_tokens
+│   └── db.js                    # SQLite : users (+role, +2FA, +Google), reports, refresh_tokens, oauth_sessions
 ├── /middlewares
 │   ├── authCheck.js             # Vérification du JWT (cookie token → req.user)
 │   └── errorHandler.js          # 401 → JSON (fetch) ou redirection (navigation)
+├── /services
+│   └── googleOAuth.js           # PKCE, URL /authorize, échange /token, décodage ID Token
 ├── /routes
-│   ├── auth.js                  # login, register, refresh, logout, setup/confirm/verify-2fa
+│   ├── auth.js                  # login local + 2FA + refresh/logout + OAuth Google
 │   └── batcomputer.js           # /bat-computer (+ échappement XSS) + POST /report
 ├── /views
 │   ├── login.html               # Connexion + champ 2FA
@@ -87,5 +102,6 @@ bat_cave/
 ├── package.json
 ├── TP3.md                       # Doc pas-à-pas (JWT)
 ├── TP4.md                       # Doc pas-à-pas (Sécurité & 2FA)
+├── TP5.md                       # Doc pas-à-pas (OAuth2 & OIDC Google)
 └── README.md
 ```
